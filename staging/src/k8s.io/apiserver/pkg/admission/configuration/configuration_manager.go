@@ -112,32 +112,6 @@ func (a *poller) bootstrapping() {
 	}()
 }
 
-// If the poller is not bootstrapped yet, the configuration() gets a few chances
-// to retry. This hides transient failures during system startup.
-func (a *poller) configuration() (runtime.Object, error) {
-	a.once.Do(a.bootstrapping)
-	a.lock.RLock()
-	defer a.lock.RUnlock()
-	retries := 1
-	if !a.bootstrapped {
-		retries = a.bootstrapRetries
-	}
-	for count := 0; count < retries; count++ {
-		if count > 0 {
-			a.lock.RUnlock()
-			time.Sleep(a.interval)
-			a.lock.RLock()
-		}
-		if a.ready {
-			return a.mergedConfiguration, nil
-		}
-	}
-	if a.lastErr != nil {
-		return nil, a.lastErr
-	}
-	return nil, ErrNotReady
-}
-
 func (a *poller) setConfigurationAndReady(value runtime.Object) {
 	a.lock.Lock()
 	defer a.lock.Unlock()

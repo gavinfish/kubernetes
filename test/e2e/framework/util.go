@@ -75,7 +75,6 @@ import (
 	uexec "k8s.io/utils/exec"
 
 	// TODO: Remove the following imports (ref: https://github.com/kubernetes/kubernetes/issues/81245)
-	e2ekubectl "k8s.io/kubernetes/test/e2e/framework/kubectl"
 	e2emetrics "k8s.io/kubernetes/test/e2e/framework/metrics"
 	e2enode "k8s.io/kubernetes/test/e2e/framework/node"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
@@ -623,11 +622,9 @@ type KubectlBuilder struct {
 	timeout <-chan time.Time
 }
 
-// NewKubectlCommand returns a KubectlBuilder for running kubectl.
-func NewKubectlCommand(namespace string, args ...string) *KubectlBuilder {
-	b := new(KubectlBuilder)
-	tk := e2ekubectl.NewTestKubeconfig(TestContext.CertDir, TestContext.Host, TestContext.KubeConfig, TestContext.KubeContext, TestContext.KubectlPath, namespace)
-	b.cmd = tk.KubectlCmd(args...)
+// WithCmd sets the given cmd and returns itself.
+func (b *KubectlBuilder) WithCmd(cmd *exec.Cmd) *KubectlBuilder {
+	b.cmd = cmd
 	return b
 }
 

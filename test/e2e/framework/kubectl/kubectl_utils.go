@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	testutils "k8s.io/kubernetes/test/utils"
@@ -60,6 +61,15 @@ func NewTestKubeconfig(certdir, host, kubeconfig, kubecontext, kubectlpath, name
 		KubectlPath: kubectlpath,
 		Namespace:   namespace,
 	}
+}
+
+// NewKubectlCommand returns a KubectlBuilder for running kubectl.
+func NewKubectlCommand(namespace string, args ...string) *framework.KubectlBuilder {
+	b := new(framework.KubectlBuilder)
+	tk := NewTestKubeconfig(framework.TestContext.CertDir, framework.TestContext.Host, framework.TestContext.KubeConfig, framework.TestContext.KubeContext, framework.TestContext.KubectlPath, namespace)
+	cmd := tk.KubectlCmd(args...)
+	b.WithCmd(cmd)
+	return b
 }
 
 // KubectlCmd runs the kubectl executable through the wrapper script.

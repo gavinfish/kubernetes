@@ -314,6 +314,7 @@ func (plugin *kubenetNetworkPlugin) clearUnusedBridgeAddresses() {
 	}
 
 	for _, addr := range addrs {
+		addr := addr
 		if !cidrIncluded(plugin.podCIDRs, addr.IPNet) {
 			klog.V(2).Infof("Removing old address %s from %s", addr.IPNet.String(), BridgeName)
 			netlink.AddrDel(bridge, &addr)

@@ -1699,3 +1699,13 @@ func TestEnsureInternalLoadBalancerModifyProtocol(t *testing.T) {
 	}
 	assertInternalLbResourcesDeleted(t, gce, svc, vals, true)
 }
+
+func TestMarshalForwardingRuleDescription(t *testing.T) {
+	serviceName := "test-service-name"
+	description := forwardingRuleDescription{
+		ServiceName: serviceName,
+	}
+	descriptionStr, _ := description.marshal()
+	expectedDescriptionStr := fmt.Sprintf(`{"kubernetes.io/service-name":"%s"}`, serviceName)
+	assert.Equal(t, expectedDescriptionStr, descriptionStr)
+}

@@ -20,6 +20,7 @@ package gce
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -177,4 +178,14 @@ func TestEnsureLoadBalancerDeletedDeletesInternalLb(t *testing.T) {
 	err = gce.EnsureLoadBalancerDeleted(context.Background(), vals.ClusterName, apiService)
 	assert.NoError(t, err)
 	assertInternalLbResourcesDeleted(t, gce, apiService, vals, true)
+}
+
+func TestMarshalForwardingFirewallDescription(t *testing.T) {
+	clusterID := "test-cluster-id"
+	description := forwardingFirewallDescription{
+		ClusterID: clusterID,
+	}
+	desc, _ := description.marshal()
+	expectedDesc := fmt.Sprintf(`{"kubernetes.io/cluster-id":"%s"}`, clusterID)
+	assert.Equal(t, expectedDesc, desc)
 }

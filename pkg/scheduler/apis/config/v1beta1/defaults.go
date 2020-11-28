@@ -17,6 +17,9 @@ limitations under the License.
 package v1beta1
 
 import (
+	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/defaultbinder"
+	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/defaultpreemption"
+	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/queuesort"
 	"net"
 	"strconv"
 
@@ -160,6 +163,21 @@ func SetDefaults_KubeSchedulerConfiguration(obj *v1beta1.KubeSchedulerConfigurat
 	if *obj.EnableProfiling && obj.EnableContentionProfiling == nil {
 		enableContentionProfiling := true
 		obj.EnableContentionProfiling = &enableContentionProfiling
+	}
+
+	for i := range obj.Profiles {
+		prof := &obj.Profiles[i]
+		prof.Plugins = &v1beta1.Plugins{
+			QueueSort: &v1beta1.PluginSet{
+				Enabled: []v1beta1.Plugin{{Name: queuesort.Name}},
+			},
+			PostFilter: &v1beta1.PluginSet{
+				Enabled: []v1beta1.Plugin{{Name: defaultpreemption.Name}},
+			},
+			Bind: &v1beta1.PluginSet{
+				Enabled: []v1beta1.Plugin{{Name: defaultbinder.Name}},
+			},
+		}
 	}
 }
 

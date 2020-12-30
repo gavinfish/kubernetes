@@ -36,7 +36,7 @@ const (
 	// ErrReasonExistingAntiAffinityRulesNotMatch is used for ExistingPodsAntiAffinityRulesNotMatch predicate error.
 	ErrReasonExistingAntiAffinityRulesNotMatch = "node(s) didn't satisfy existing pods anti-affinity rules"
 	// ErrReasonAffinityNotMatch is used for MatchInterPodAffinity predicate error.
-	ErrReasonAffinityNotMatch = "node(s) didn't match pod affinity/anti-affinity"
+	ErrReasonAffinityNotMatch = "node(s) didn't match pod affinity/anti-affinity rules"
 	// ErrReasonAffinityRulesNotMatch is used for PodAffinityRulesNotMatch predicate error.
 	ErrReasonAffinityRulesNotMatch = "node(s) didn't match pod affinity rules"
 	// ErrReasonAntiAffinityRulesNotMatch is used for PodAntiAffinityRulesNotMatch predicate error.
@@ -71,22 +71,18 @@ func (s *preFilterState) Clone() framework.StateData {
 	return &copy
 }
 
-// updateWithPod updates the preFilterState counters with the (anti)affinity matches for the given pod.
-func (s *preFilterState) updateWithPod(updatedPod *v1.Pod, node *v1.Node, multiplier int64) error {
+// updateWithPod updates the preFilterState counters with the (anti)affinity matches for the given podInfo.
+func (s *preFilterState) updateWithPod(updatedPodInfo *framework.PodInfo, node *v1.Node, multiplier int64) {
 	if s == nil {
-		return nil
+		return
 	}
 
 	// Update matching existing anti-affinity terms.
-	// TODO(#91058): AddPod/RemovePod should pass a *framework.PodInfo type instead of *v1.Pod.
-	updatedPodInfo := framework.NewPodInfo(updatedPod)
 	s.topologyToMatchedExistingAntiAffinityTerms.updateWithAntiAffinityTerms(s.podInfo.Pod, node, updatedPodInfo.RequiredAntiAffinityTerms, multiplier)
 
 	// Update matching incoming pod (anti)affinity terms.
-	s.topologyToMatchedAffinityTerms.updateWithAffinityTerms(updatedPod, node, s.podInfo.RequiredAffinityTerms, multiplier)
-	s.topologyToMatchedAntiAffinityTerms.updateWithAntiAffinityTerms(updatedPod, node, s.podInfo.RequiredAntiAffinityTerms, multiplier)
-
-	return nil
+	s.topologyToMatchedAffinityTerms.updateWithAffinityTerms(updatedPodInfo.Pod, node, s.podInfo.RequiredAffinityTerms, multiplier)
+	s.topologyToMatchedAntiAffinityTerms.updateWithAntiAffinityTerms(updatedPodInfo.Pod, node, s.podInfo.RequiredAntiAffinityTerms, multiplier)
 }
 
 // TODO(Huang-Wei): It might be possible to use "make(map[topologyPair]*int64)" so that
@@ -284,7 +280,8 @@ func (pl *InterPodAffinity) AddPod(ctx context.Context, cycleState *framework.Cy
 	if err != nil {
 		return framework.NewStatus(framework.Error, err.Error())
 	}
-	state.updateWithPod(podToAdd, nodeInfo.Node(), 1)
+	updatedPodInfo := framework.NewPodInfo(podToAdd)
+	state.updateWithPod(updatedPodInfo, nodeInfo.Node(), 1)
 	return nil
 }
 
@@ -294,7 +291,8 @@ func (pl *InterPodAffinity) RemovePod(ctx context.Context, cycleState *framework
 	if err != nil {
 		return framework.NewStatus(framework.Error, err.Error())
 	}
-	state.updateWithPod(podToRemove, nodeInfo.Node(), -1)
+	updatedPodInfo := framework.NewPodInfo(podToRemove)
+	state.updateWithPod(updatedPodInfo, nodeInfo.Node(), -1)
 	return nil
 }
 

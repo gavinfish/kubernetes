@@ -602,7 +602,8 @@ func TestAdoptOrphanRevisions(t *testing.T) {
 	} else {
 		var adopted bool
 		for i := range revisions {
-			if revisions[i].Name == ss1Rev2.Name && metav1.GetControllerOf(revisions[i]) != nil {
+			x := metav1.GetControllerOf(revisions[i])
+			if revisions[i].Name == ss1Rev2.Name && x != nil {
 				adopted = true
 			}
 		}

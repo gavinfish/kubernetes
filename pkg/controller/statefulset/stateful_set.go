@@ -52,6 +52,7 @@ var controllerKind = apps.SchemeGroupVersion.WithKind("StatefulSet")
 type StatefulSetController struct {
 	// client interface
 	kubeClient clientset.Interface
+	crControl  controller.ControllerRevisionControlInterface
 	// control returns an interface capable of syncing a stateful set.
 	// Abstracted out for testing.
 	control StatefulSetControlInterface
@@ -99,6 +100,9 @@ func NewStatefulSetController(
 			history.NewHistory(kubeClient, revInformer.Lister()),
 			recorder,
 		),
+		crControl: controller.RealControllerRevisionControl{
+			KubeClient: kubeClient,
+		},
 		pvcListerSynced: pvcInformer.Informer().HasSynced,
 		queue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "statefulset"),
 		podControl:      controller.RealPodControl{KubeClient: kubeClient, Recorder: recorder},
@@ -310,10 +314,19 @@ func (ssc *StatefulSetController) canAdoptFunc(set *apps.StatefulSet) func() err
 
 // adoptOrphanRevisions adopts any orphaned ControllerRevisions matched by set's Selector.
 func (ssc *StatefulSetController) adoptOrphanRevisions(set *apps.StatefulSet) error {
-	revisions, err := ssc.control.ListRevisions(set)
+	//revisions, err := ssc.control.ListRevisions(set)
+	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
 	if err != nil {
 		return err
 	}
+	revisions, err := (ssc.control.(*defaultStatefulSetControl)).controllerHistory.ListControllerRevisions(set, selector)
+	if err != nil {
+		return err
+	}
+	//selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	//if err != nil {
+	//	return err
+	//}
 	orphanRevisions := make([]*apps.ControllerRevision, 0)
 	for i := range revisions {
 		if metav1.GetControllerOf(revisions[i]) == nil {
@@ -321,11 +334,24 @@ func (ssc *StatefulSetController) adoptOrphanRevisions(set *apps.StatefulSet) er
 		}
 	}
 	if len(orphanRevisions) > 0 {
-		canAdoptErr := ssc.canAdoptFunc(set)()
-		if canAdoptErr != nil {
-			return fmt.Errorf("can't adopt ControllerRevisions: %v", canAdoptErr)
+		canAdoptFunc := controller.RecheckDeletionTimestamp(func() (metav1.Object, error) {
+			fresh, err := ssc.kubeClient.AppsV1().StatefulSets(set.Namespace).Get(context.TODO(), set.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			if fresh.UID != set.UID {
+				return nil, fmt.Errorf("original StatefulSet %v/%v is gone: got uid %v, wanted %v", set.Namespace, set.Name, fresh.UID, set.UID)
+			}
+			return fresh, nil
+		})
+		cm := controller.NewControllerRevisionControllerRefManager(ssc.crControl, set, selector, controllerKind, canAdoptFunc)
+		adopted, err := cm.ClaimControllerRevisions(orphanRevisions)
+		if err != nil {
+			return err
 		}
-		return ssc.control.AdoptOrphanRevisions(set, orphanRevisions)
+		for i := range orphanRevisions {
+			orphanRevisions[i] = adopted[i]
+		}
 	}
 	return nil
 }

@@ -539,7 +539,8 @@ func TestPreFilterStateAddRemovePod(t *testing.T) {
 
 			// Add test.addedPod to state1 and verify it is equal to allPodsState.
 			nodeInfo := mustGetNodeInfo(t, snapshot, test.addedPod.Spec.NodeName)
-			if err := ipa.AddPod(context.Background(), state, test.pendingPod, test.addedPod, nodeInfo); err != nil {
+			addedPodInfo := framework.NewPodInfo(test.addedPod)
+			if err := ipa.AddPod(context.Background(), state, test.pendingPod, addedPodInfo, nodeInfo); err != nil {
 				t.Errorf("error adding pod to preFilterState: %v", err)
 			}
 
@@ -548,7 +549,7 @@ func TestPreFilterStateAddRemovePod(t *testing.T) {
 			}
 
 			// Remove the added pod pod and make sure it is equal to the original state.
-			if err := ipa.RemovePod(context.Background(), state, test.pendingPod, test.addedPod, nodeInfo); err != nil {
+			if err := ipa.RemovePod(context.Background(), state, test.pendingPod, addedPodInfo, nodeInfo); err != nil {
 				t.Errorf("error removing pod from preFilterState: %v", err)
 			}
 			if !reflect.DeepEqual(sortState(plStateOriginal), sortState(plState)) {

@@ -838,7 +838,8 @@ func TestPreFilterStateAddPod(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if s := pl.AddPod(ctx, cs, tt.preemptor, tt.addedPod, nodeInfo); !s.IsSuccess() {
+			addedPodInfo := framework.NewPodInfo(tt.addedPod)
+			if s := pl.AddPod(ctx, cs, tt.preemptor, addedPodInfo, nodeInfo); !s.IsSuccess() {
 				t.Fatal(s.AsError())
 			}
 			state, err := getPreFilterState(cs)
@@ -1050,7 +1051,8 @@ func TestPreFilterStateRemovePod(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if s := pl.RemovePod(ctx, cs, tt.preemptor, deletedPod, nodeInfo); !s.IsSuccess() {
+			deletedPodInfo := framework.NewPodInfo(deletedPod)
+			if s := pl.RemovePod(ctx, cs, tt.preemptor, deletedPodInfo, nodeInfo); !s.IsSuccess() {
 				t.Fatal(s.AsError())
 			}
 

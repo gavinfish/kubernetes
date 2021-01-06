@@ -390,7 +390,8 @@ func addNominatedPods(ctx context.Context, ph framework.PreemptHandle, pod *v1.P
 	for _, p := range nominatedPods {
 		if corev1helpers.PodPriority(p) >= corev1helpers.PodPriority(pod) && p.UID != pod.UID {
 			nodeInfoOut.AddPod(p)
-			status := ph.RunPreFilterExtensionAddPod(ctx, stateOut, pod, p, nodeInfoOut)
+			podInfoToAdd := framework.NewPodInfo(p)
+			status := ph.RunPreFilterExtensionAddPod(ctx, stateOut, pod, podInfoToAdd, nodeInfoOut)
 			if !status.IsSuccess() {
 				return false, state, nodeInfo, status.AsError()
 			}

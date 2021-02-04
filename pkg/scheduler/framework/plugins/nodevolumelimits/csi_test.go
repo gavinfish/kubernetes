@@ -19,7 +19,7 @@ package nodevolumelimits
 import (
 	"context"
 	"fmt"
-	"reflect"
+	"github.com/google/go-cmp/cmp"
 	"strings"
 	"testing"
 
@@ -467,8 +467,8 @@ func TestCSILimits(t *testing.T) {
 				translator:           csitrans.New(),
 			}
 			gotStatus := p.Filter(context.Background(), nil, test.newPod, node)
-			if !reflect.DeepEqual(gotStatus, test.wantStatus) {
-				t.Errorf("status does not match: %v, want: %v", gotStatus, test.wantStatus)
+			if diff := cmp.Diff(test.wantStatus, gotStatus); diff != "" {
+				t.Errorf("unexpected status (-want, +got): %s", diff)
 			}
 		})
 	}

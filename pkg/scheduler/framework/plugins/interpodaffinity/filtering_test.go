@@ -18,6 +18,7 @@ package interpodaffinity
 
 import (
 	"context"
+	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"strings"
 	"testing"
@@ -864,8 +865,8 @@ func TestRequiredAffinitySingleNode(t *testing.T) {
 			} else {
 				nodeInfo := mustGetNodeInfo(t, snapshot, test.node.Name)
 				gotStatus := p.Filter(context.Background(), state, test.pod, nodeInfo)
-				if !reflect.DeepEqual(gotStatus, test.wantStatus) {
-					t.Errorf("status does not match: %v, want: %v", gotStatus, test.wantStatus)
+				if diff := cmp.Diff(test.wantStatus, gotStatus); diff != "" {
+					t.Errorf("unexpected status (-want, +got): %s", diff)
 				}
 			}
 		})

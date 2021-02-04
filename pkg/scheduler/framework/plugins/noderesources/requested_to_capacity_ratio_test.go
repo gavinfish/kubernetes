@@ -19,6 +19,7 @@ package noderesources
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"testing"
 
@@ -93,8 +94,8 @@ func TestRequestedToCapacityRatio(t *testing.T) {
 				gotPriorities = append(gotPriorities, framework.NodeScore{Name: n.Name, Score: score})
 			}
 
-			if !reflect.DeepEqual(test.expectedPriorities, gotPriorities) {
-				t.Errorf("expected:\n\t%+v,\ngot:\n\t%+v", test.expectedPriorities, gotPriorities)
+			if diff := cmp.Diff(test.expectedPriorities, gotPriorities); diff != "" {
+				t.Errorf("unexpected node score list (-want, +got): %s", diff)
 			}
 		})
 	}

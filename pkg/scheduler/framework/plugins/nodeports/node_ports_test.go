@@ -19,6 +19,7 @@ package nodeports
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"strconv"
 	"strings"
@@ -156,8 +157,8 @@ func TestNodePorts(t *testing.T) {
 				t.Errorf("prefilter failed with status: %v", preFilterStatus)
 			}
 			gotStatus := p.(framework.FilterPlugin).Filter(context.Background(), cycleState, test.pod, test.nodeInfo)
-			if !reflect.DeepEqual(gotStatus, test.wantStatus) {
-				t.Errorf("status does not match: %v, want: %v", gotStatus, test.wantStatus)
+			if diff := cmp.Diff(test.wantStatus, gotStatus); diff != "" {
+				t.Errorf("unexpected status (-want, +got): %s", diff)
 			}
 		})
 	}

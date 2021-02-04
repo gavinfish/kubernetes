@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -302,10 +301,10 @@ func TestPostFilter(t *testing.T) {
 			}
 
 			gotResult, gotStatus := p.PostFilter(context.TODO(), state, tt.pod, tt.filteredNodesStatuses)
-			if !reflect.DeepEqual(gotStatus, tt.wantStatus) {
-				t.Errorf("Status does not match: %v, want: %v", gotStatus, tt.wantStatus)
+			if diff := cmp.Diff(tt.wantStatus, gotStatus); diff != "" {
+				t.Errorf("unexpected status (-want, +got): %s", diff)
 			}
-			if diff := cmp.Diff(gotResult, tt.wantResult); diff != "" {
+			if diff := cmp.Diff(tt.wantResult, gotResult); diff != "" {
 				t.Errorf("Unexpected postFilterResult (-want, +got): %s", diff)
 			}
 		})

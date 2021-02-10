@@ -18,10 +18,10 @@ package interpodaffinity
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/scheduler/framework"
@@ -864,8 +864,8 @@ func TestRequiredAffinitySingleNode(t *testing.T) {
 			} else {
 				nodeInfo := mustGetNodeInfo(t, snapshot, test.node.Name)
 				gotStatus := p.Filter(context.Background(), state, test.pod, nodeInfo)
-				if !reflect.DeepEqual(gotStatus, test.wantStatus) {
-					t.Errorf("status does not match: %v, want: %v", gotStatus, test.wantStatus)
+				if diff := cmp.Diff(test.wantStatus, gotStatus); diff != "" {
+					t.Errorf("unexpected status (-want, +got): %s", diff)
 				}
 			}
 		})
@@ -1736,7 +1736,7 @@ func TestRequiredAffinityMultipleNodes(t *testing.T) {
 		},
 	}
 
-	for indexTest, test := range tests {
+	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			snapshot := cache.NewSnapshot(test.pods, test.nodes)
 			for indexNode, node := range test.nodes {
@@ -1750,8 +1750,8 @@ func TestRequiredAffinityMultipleNodes(t *testing.T) {
 				}
 				nodeInfo := mustGetNodeInfo(t, snapshot, node.Name)
 				gotStatus := p.Filter(context.Background(), state, test.pod, nodeInfo)
-				if !reflect.DeepEqual(gotStatus, test.wantStatuses[indexNode]) {
-					t.Errorf("index: %d status does not match: %v, want: %v", indexTest, gotStatus, test.wantStatuses[indexNode])
+				if diff := cmp.Diff(test.wantStatuses[indexNode], gotStatus); diff != "" {
+					t.Errorf("unexpected status (-want, +got): %s", diff)
 				}
 			}
 		})
@@ -1767,8 +1767,8 @@ func TestPreFilterDisabled(t *testing.T) {
 	cycleState := framework.NewCycleState()
 	gotStatus := p.Filter(context.Background(), cycleState, pod, nodeInfo)
 	wantStatus := framework.NewStatus(framework.Error, `error reading "PreFilterInterPodAffinity" from cycleState: not found`)
-	if !reflect.DeepEqual(gotStatus, wantStatus) {
-		t.Errorf("status does not match: %v, want: %v", gotStatus, wantStatus)
+	if diff := cmp.Diff(wantStatus, gotStatus); diff != "" {
+		t.Errorf("unexpected status (-want, +got): %s", diff)
 	}
 }
 
@@ -2070,24 +2070,24 @@ func TestPreFilterStateAddRemovePod(t *testing.T) {
 				t.Errorf("failed to get preFilterState from cycleState: %v", err)
 			}
 
-			if !reflect.DeepEqual(newState.topologyToMatchedAntiAffinityTerms, test.expectedAntiAffinity) {
-				t.Errorf("State is not equal, got: %v, want: %v", newState.topologyToMatchedAntiAffinityTerms, test.expectedAntiAffinity)
+			if diff := cmp.Diff(test.expectedAntiAffinity, newState.topologyToMatchedAntiAffinityTerms); diff != "" {
+				t.Errorf("unexpected anti affinity terms (-want, +got): %s", diff)
 			}
 
-			if !reflect.DeepEqual(newState.topologyToMatchedAffinityTerms, test.expectedAffinity) {
-				t.Errorf("State is not equal, got: %v, want: %v", newState.topologyToMatchedAffinityTerms, test.expectedAffinity)
+			if diff := cmp.Diff(test.expectedAffinity, newState.topologyToMatchedAffinityTerms); diff != "" {
+				t.Errorf("unexpected affinity terms (-want, +got): %s", diff)
 			}
 
-			if !reflect.DeepEqual(allPodsState, state) {
-				t.Errorf("State is not equal, got: %v, want: %v", state, allPodsState)
+			if diff := cmp.Diff(allPodsState, state); diff != "" {
+				t.Errorf("unexpected state (-want, +got): %s", diff)
 			}
 
 			// Remove the added pod pod and make sure it is equal to the original state.
 			if err := ipa.RemovePod(context.Background(), cycleState, test.pendingPod, framework.NewPodInfo(test.addedPod), nodeInfo); err != nil {
 				t.Errorf("error removing pod from meta: %v", err)
 			}
-			if !reflect.DeepEqual(originalState, state) {
-				t.Errorf("State is not equal, got: %v, want: %v", state, originalState)
+			if diff := cmp.Diff(originalState, state); diff != "" {
+				t.Errorf("unexpected state (-want, +got): %s", diff)
 			}
 		})
 	}
@@ -2113,8 +2113,8 @@ func TestPreFilterStateClone(t *testing.T) {
 	if clone == source {
 		t.Errorf("Clone returned the exact same object!")
 	}
-	if !reflect.DeepEqual(clone, source) {
-		t.Errorf("Copy is not equal to source!")
+	if diff := cmp.Diff(source, clone); diff != "" {
+		t.Errorf("unexpected preFilterState (-want, +got): %s", diff)
 	}
 }
 
@@ -2320,11 +2320,11 @@ func TestGetTPMapMatchingIncomingAffinityAntiAffinity(t *testing.T) {
 			s := cache.NewSnapshot(tt.existingPods, tt.nodes)
 			l, _ := s.NodeInfos().List()
 			gotAffinityPodsMap, gotAntiAffinityPodsMap := getTPMapMatchingIncomingAffinityAntiAffinity(framework.NewPodInfo(tt.pod), l)
-			if !reflect.DeepEqual(gotAffinityPodsMap, tt.wantAffinityPodsMap) {
-				t.Errorf("getTPMapMatchingIncomingAffinityAntiAffinity() gotAffinityPodsMap = %#v, want %#v", gotAffinityPodsMap, tt.wantAffinityPodsMap)
+			if diff := cmp.Diff(tt.wantAffinityPodsMap, gotAffinityPodsMap); diff != "" {
+				t.Errorf("unexpected affinity pods map (-want, +got): %s", diff)
 			}
-			if !reflect.DeepEqual(gotAntiAffinityPodsMap, tt.wantAntiAffinityPodsMap) {
-				t.Errorf("getTPMapMatchingIncomingAffinityAntiAffinity() gotAntiAffinityPodsMap = %#v, want %#v", gotAntiAffinityPodsMap, tt.wantAntiAffinityPodsMap)
+			if diff := cmp.Diff(tt.wantAntiAffinityPodsMap, gotAntiAffinityPodsMap); diff != "" {
+				t.Errorf("unexpected anti affinity pods map (-want, +got): %s", diff)
 			}
 		})
 	}

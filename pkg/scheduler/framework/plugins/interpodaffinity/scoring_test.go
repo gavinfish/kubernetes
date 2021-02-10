@@ -18,10 +18,10 @@ package interpodaffinity
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/scheduler/apis/config"
@@ -609,8 +609,8 @@ func TestPreferredAffinity(t *testing.T) {
 					t.Errorf("unexpected error: %v", status)
 				}
 
-				if !reflect.DeepEqual(test.expectedList, gotList) {
-					t.Errorf("expected:\n\t%+v,\ngot:\n\t%+v", test.expectedList, gotList)
+				if diff := cmp.Diff(test.expectedList, gotList); diff != "" {
+					t.Errorf("unexpected node score list (-want, +got): %s", diff)
 				}
 			}
 
@@ -718,8 +718,8 @@ func TestPreferredAffinityWithHardPodAffinitySymmetricWeight(t *testing.T) {
 				t.Errorf("unexpected error: %v", status)
 			}
 
-			if !reflect.DeepEqual(test.expectedList, gotList) {
-				t.Errorf("expected:\n\t%+v,\ngot:\n\t%+v", test.expectedList, gotList)
+			if diff := cmp.Diff(test.expectedList, gotList); diff != "" {
+				t.Errorf("unexpected node score list (-want, +got): %s", diff)
 			}
 		})
 	}

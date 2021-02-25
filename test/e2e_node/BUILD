@@ -226,7 +226,6 @@ go_test(
         "//vendor/github.com/onsi/gomega:go_default_library",
         "//vendor/github.com/onsi/gomega/gstruct:go_default_library",
         "//vendor/github.com/onsi/gomega/types:go_default_library",
-        "//vendor/github.com/prometheus/common/model:go_default_library",
         "//vendor/k8s.io/klog/v2:go_default_library",
         "//vendor/k8s.io/utils/pointer:go_default_library",
     ] + select({

@@ -436,7 +436,6 @@ package_group(
         "//staging/src/k8s.io/apiserver/pkg/admission/metrics",
         "//staging/src/k8s.io/component-base/metrics/...",
         "//test/e2e/apimachinery",
-        "//test/e2e_node",
         "//test/integration/apiserver/flowcontrol",
         "//test/integration/metrics",
         "//vendor/...",
